@@ -105,7 +105,7 @@ function renderAlarmItem(alarm) {
   return `
     <div class="flex items-center gap-4 bg-white dark:bg-slate-800/50 p-4 rounded-xl border ${cardBorder} hover:bg-slate-50 dark:hover:bg-slate-800 transition-all alarm-item ${enabled ? 'shadow-sm shadow-primary/5' : ''}" data-id="${alarm.id}">
       ${deleteBtn}
-      <div class="alarm-card-content flex flex-1 items-center gap-4 min-w-0 ${editMode ? 'cursor-pointer' : ''}" data-id="${alarm.id}">
+      <div class="alarm-card-content flex flex-1 items-center gap-4 min-w-0 ${editMode ? 'cursor-pointer hover:opacity-90' : ''}" data-id="${alarm.id}" title="${editMode ? 'Tap to edit' : ''}">
         <div class="flex items-center justify-center rounded-lg ${iconBg} shrink-0 size-12">
           <span class="material-symbols-outlined">${alarm.type}</span>
         </div>
@@ -365,7 +365,7 @@ function openAddAlarmModal() {
 function openEditAlarmModal(id) {
   const alarm = alarms.find(a => a.id === id);
   if (!alarm) return;
-  alarm = ensureAlarmSound(alarm);
+  ensureAlarmSound(alarm);
 
   editingAlarmId = id;
   document.getElementById('modal-title').textContent = 'Edit Alarm';
