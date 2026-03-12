@@ -70,10 +70,10 @@
     </nav>
   </div>
 
-  <!-- Modal for adding alarm -->
-  <div id="add-alarm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 mx-4 w-full max-w-sm shadow-2xl">
-      <h3 class="text-xl font-bold text-slate-900 dark:text-white mb-4">Add Alarm</h3>
+  <!-- Modal for add/edit alarm -->
+  <div id="add-alarm-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <div class="bg-white dark:bg-slate-800 rounded-2xl p-6 mx-4 w-full max-w-sm shadow-2xl max-h-[90vh] overflow-y-auto">
+      <h3 id="modal-title" class="text-xl font-bold text-slate-900 dark:text-white mb-4">Add Alarm</h3>
       <div class="space-y-4">
         <div>
           <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Time</label>
@@ -91,6 +91,24 @@
             <option value="wednesday">Wednesday</option>
             <option value="everyday">Every day</option>
           </select>
+        </div>
+        <div>
+          <label class="block text-sm font-medium text-slate-600 dark:text-slate-400 mb-2">Alarm sound</label>
+          <select id="alarm-sound-type" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-slate-900 dark:text-white">
+            <option value="gentle">Gentle sunrise</option>
+            <option value="chime">Soft chime</option>
+            <option value="classic">Classic bell</option>
+            <option value="youtube">YouTube video</option>
+            <option value="upload">Upload audio file</option>
+          </select>
+          <div id="sound-youtube-wrap" class="mt-2 hidden">
+            <input type="url" id="alarm-sound-youtube" placeholder="Paste YouTube video URL" class="w-full rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-slate-900 dark:text-white placeholder-slate-500 text-sm"/>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">The video will open when the alarm rings.</p>
+          </div>
+          <div id="sound-upload-wrap" class="mt-2 hidden">
+            <input type="file" id="alarm-sound-file" accept="audio/*" class="w-full text-sm text-slate-600 dark:text-slate-400 file:mr-2 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-primary file:text-white file:font-medium"/>
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">MP3, WAV, or other audio formats.</p>
+          </div>
         </div>
       </div>
       <div class="flex gap-3 mt-6">
