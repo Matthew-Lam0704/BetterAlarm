@@ -1,0 +1,9 @@
+{
+  "name": "silentalarm",
+  "version": "1.0.0",
+  "description": "SilentAlarm - A modern alarm app",
+  "scripts": {
+    "start": "python3 -m http.server 3000",
+    "dev": "python3 -m http.server 3000"
+  }
+}
