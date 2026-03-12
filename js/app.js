@@ -23,6 +23,26 @@ let editMode = false;
 let editingAlarmId = null;
 let nextId = 5;
 
+// Audio output device (localStorage)
+const AUDIO_OUTPUT_KEY = 'silentalarm_audio_output';
+function getStoredAudioOutput() {
+  try {
+    const s = localStorage.getItem(AUDIO_OUTPUT_KEY);
+    return s ? JSON.parse(s) : null;
+  } catch { return null; }
+}
+function setStoredAudioOutput(deviceId, label) {
+  localStorage.setItem(AUDIO_OUTPUT_KEY, JSON.stringify({ deviceId, label }));
+}
+async function applySinkId(audioElement) {
+  const stored = getStoredAudioOutput();
+  if (stored?.deviceId && audioElement.setSinkId) {
+    try {
+      await audioElement.setSinkId(stored.deviceId);
+    } catch (_) {}
+  }
+}
+
 function parseTime(timeStr) {
   const [h, m] = timeStr.split(':').map(Number);
   const period = h >= 12 ? 'PM' : 'AM';
@@ -256,6 +276,27 @@ function renderSettingsPage() {
           </label>
         </div>
       </div>
+      <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 px-2">Audio output</h2>
+      <div class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
+        <div class="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700/50">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="material-symbols-outlined text-slate-500 dark:text-slate-400 shrink-0">speaker</span>
+            <div class="min-w-0">
+              <span class="font-medium text-slate-900 dark:text-white block">Play alarm through</span>
+              <span id="audio-output-label" class="text-sm text-slate-500 dark:text-slate-400 truncate block">Default device</span>
+            </div>
+          </div>
+          <button id="choose-speaker-btn" class="shrink-0 py-2 px-3 rounded-lg bg-primary text-white text-sm font-medium hover:opacity-90 transition-opacity">
+            Change
+          </button>
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-700/50">
+          <button id="test-speaker-btn" class="flex items-center gap-2 w-full py-2 px-3 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-slate-300 text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+            <span class="material-symbols-outlined text-lg">play_circle</span>
+            Test sound
+          </button>
+        </div>
+      </div>
       <h2 class="text-lg font-semibold text-slate-900 dark:text-slate-100 px-2">Sounds</h2>
       <div class="bg-white dark:bg-slate-800/50 rounded-xl border border-slate-200 dark:border-slate-700/50 overflow-hidden">
         <div class="flex items-center justify-between p-4">
@@ -285,6 +326,7 @@ function renderPage(page) {
   } else if (page === 'settings') {
     main.innerHTML = renderSettingsPage();
     bindDarkModeToggle();
+    bindAudioOutputSettings();
   }
 
   updateHeader(page);
@@ -340,6 +382,82 @@ function bindDarkModeToggle() {
       document.documentElement.classList.toggle('dark', toggle.checked);
     };
   }
+}
+
+function updateAudioOutputLabel() {
+  const el = document.getElementById('audio-output-label');
+  if (!el) return;
+  const stored = getStoredAudioOutput();
+  el.textContent = stored?.label || 'Default device';
+}
+
+async function chooseAudioOutput() {
+  const chooseBtn = document.getElementById('choose-speaker-btn');
+  if (!chooseBtn) return;
+  chooseBtn.disabled = true;
+  chooseBtn.textContent = '...';
+  try {
+    if (navigator.mediaDevices?.selectAudioOutput) {
+      const device = await navigator.mediaDevices.selectAudioOutput();
+      setStoredAudioOutput(device.deviceId, device.label);
+      updateAudioOutputLabel();
+    } else {
+      const devices = await navigator.mediaDevices?.enumerateDevices?.() || [];
+      const outputs = devices.filter(d => d.kind === 'audiooutput');
+      if (outputs.length === 0) {
+        alert('No audio output devices found. This feature requires a secure connection (HTTPS) and may not be supported in all browsers.');
+        return;
+      }
+      const labels = outputs.map((d, i) => `${i + 1}. ${d.label || 'Speaker ' + (i + 1)}`).join('\n');
+      const choice = prompt(`Enter the number of your preferred device (1-${outputs.length}):\n\n${labels}`);
+      if (choice) {
+        const idx = parseInt(choice, 10) - 1;
+        if (idx >= 0 && idx < outputs.length) {
+          const d = outputs[idx];
+          setStoredAudioOutput(d.deviceId, d.label || 'Speaker ' + (idx + 1));
+          updateAudioOutputLabel();
+        }
+      }
+    }
+  } catch (err) {
+    if (err.name !== 'NotAllowedError' && err.name !== 'AbortError') {
+      console.warn('Audio output selection:', err);
+    }
+  } finally {
+    chooseBtn.disabled = false;
+    chooseBtn.textContent = 'Change';
+  }
+}
+
+async function testAudioOutput() {
+  const testBtn = document.getElementById('test-speaker-btn');
+  if (!testBtn) return;
+  testBtn.disabled = true;
+  const icon = testBtn.querySelector('.material-symbols-outlined');
+  if (icon) icon.textContent = 'hourglass_empty';
+  const audio = new Audio(SOUND_PRESETS.gentle.url);
+  await applySinkId(audio);
+  audio.volume = 0.5;
+  audio.onended = () => {
+    testBtn.disabled = false;
+    if (icon) icon.textContent = 'play_circle';
+  };
+  audio.onerror = () => {
+    testBtn.disabled = false;
+    if (icon) icon.textContent = 'play_circle';
+  };
+  audio.play().catch(() => {
+    testBtn.disabled = false;
+    if (icon) icon.textContent = 'play_circle';
+  });
+}
+
+function bindAudioOutputSettings() {
+  updateAudioOutputLabel();
+  const chooseBtn = document.getElementById('choose-speaker-btn');
+  const testBtn = document.getElementById('test-speaker-btn');
+  if (chooseBtn) chooseBtn.addEventListener('click', chooseAudioOutput);
+  if (testBtn) testBtn.addEventListener('click', testAudioOutput);
 }
 
 function toggleSoundFields() {
